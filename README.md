@@ -7,8 +7,7 @@ but is implemented for a modern RISC-V multiprocessor using ANSI C.
 ## ACKNOWLEDGMENTS
 
 xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
-to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
-2000)). See also https://pdos.csail.mit.edu/6.1810/, which provides
+to Peer Communications; ISBN: 1-57398-013-7). See also https://pdos.csail.mit.edu/6.1810/, which provides
 pointers to online resources for v6.
 
 The following people have made contributions: Russ Cox (context switching,
@@ -47,42 +46,75 @@ https://github.com/riscv/riscv-gnu-toolchain, and qemu compiled for
 riscv64-softmmu. Once they are installed, and in your shell
 search path, you can run "make qemu".
 
-## Project Modifications by Manely Ghasemnia Hamedani
+---
 
-In this project, the following system calls and features have been added:
+## Modifications by Manely Ghasemnia Hamedani
 
-### Part 1: Adding `child_processes` System Call
+This fork of xv6 introduces several key enhancements and new system calls as part of an educational operating systems project. These are grouped into three phases:
 
-A new system call, `child_processes`, has been implemented to retrieve and display the list of all descendants for a given process. The system call takes the current process and outputs the list of its descendants. This feature improves process management by allowing easier tracking of child processes in the system.
+### Phase 1: `child_processes` System Call
 
-Key Features:
-- Retrieves and displays descendants for the current process.
-- Outputs the name, pid, parent pid, and status of each all descendant.
+Introduced a new syscall `child_processes` that retrieves and displays all descendant processes of the calling process.
 
-### Part 2: Adding `report_traps` System Call
+**Features:**
+- Lists all descendant processes.
+- Outputs each process’s:
+  - Name
+  - PID
+  - Parent PID
+  - Status (e.g., running, sleeping).
 
-The `myrep` system call was introduced to report crash events of all descendants. The system call allows the user to view the last 10 crash reports of descendants. Additionally, `sysrep`, an advanced version of the system call, provides system-wide crash reports.
+### Phase 2: Multithreading Enhancements
 
-Key Features:
-- Displays the last 10 crash reports of all descendants.
-- Stores the reports in a circular buffer.
+This phase focuses on multithreading improvements and introduces key system calls for thread management.
 
-### Part 3: Storing Crash Reports in a File
+**Features:**
+- **`create_thread`**: Creates a new thread with a specific runner function and arguments.
+- **`stop_thread`**: Allows a thread to stop execution.
+- **`join_thread`**: Allows a thread to wait for another thread to complete its execution before proceeding.
+  
+In this phase, thread management is enhanced with a new **`thread` structure** that supports multiple thread states like `joined`, `runnable`, `running`, `free`, etc. This enables efficient management of multiple concurrent threads in the system.
 
-The new feature stores crash reports in a file (`/reports.bin`) for persistence. The crash reports are written to the file in binary format, with the total number of reports stored in the first 4 bytes of the file. This allows for the tracking and retrieval of historical crash data.
+**Test Programs:**
+- **`threadtest.c`**: A test program that demonstrates thread creation, joining, and stopping.
 
-Key Features:
-- Stores crash reports to a file (`/reports.bin`).
-- Supports reading the reports from the file with the `sysrep` system call.
-- Handles file reading and writing from kernel space without causing deadlocks.
+### Phase 3: CPU Scheduling Enhancements
 
-### 4. **Additional Enhancements**
+This phase adds multiple CPU scheduling improvements to better manage process execution.
 
-- **Process Cleanup (`killall` System Call)**: A new system call, `killall`, was added to terminate all processes except for essential ones such as `init` and `shell`. This is useful for cleaning up the system during testing.
-- **Testing Programs**: A suite of user-space programs were developed to demonstrate and validate the new system calls:
-  - **`childrentest.c`**: A test program that forks multiple child processes and displays the list of child processes.
-  - **`reptest.c`**: A test program that simulates process crashes and displays crash reports via the `myrep` system call.
-  - **`sysrep.c`**: A program that reads and displays the crash reports stored in `/reports.bin`.
+**Key Features:**
+- **Set CPU Quota**: The system now supports setting CPU quotas for processes, helping to manage CPU usage more efficiently across tasks.
+- **`cpu_usage`**: A new mechanism to track the CPU usage of individual processes.
+- **Deadline Scheduling**: New scheduling techniques to handle deadlines for processes with real-time requirements.
+
+**Core Features:**
+- **`set_cpu_quota`**: This system call enables setting CPU limits for specific processes.
+- **`cpu_usage`**: Tracks and reports the CPU usage of processes to help optimize performance.
+- **New Scheduling Algorithms**: 
+  - **`MinCU`**: Minimum CPU usage scheduling.
+  - **Round-Robin**: Enhanced round-robin scheduling with deadlines.
+  
+This phase also introduces a more advanced `top` command that displays process statistics, including their CPU usage, quota, and execution status.
+
+**Test Programs:**
+- **`cpuschedtest.c`**: Demonstrates and validates the new CPU scheduling features, including CPU quotas and deadline management.
+
+---
+
+### Additional Enhancements
+
+#### `killall` System Call
+Terminates all processes except core system ones (`init`, `shell`, etc.), helping with system resets or testing.
+
+#### Testing Programs
+
+Several user-space programs were created to test and demonstrate the new features:
+
+- **`childrentest.c`**: Spawns multiple child processes and displays their details via `child_processes`.
+- **`reptest.c`**: Simulates crashes and uses `myrep` to print crash logs.
+- **`sysrep.c`**: Reads and prints the contents of `/reports.bin` using `sysrep`.
+
+---
 
 ## LICENSE
 
